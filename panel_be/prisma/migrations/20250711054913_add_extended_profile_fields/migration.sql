@@ -1,0 +1,17 @@
+-- AlterTable
+ALTER TABLE `User` ADD COLUMN `accountActive` BOOLEAN NOT NULL DEFAULT true,
+    ADD COLUMN `address` VARCHAR(191) NULL,
+    ADD COLUMN `annualHouseholdIncome` VARCHAR(191) NULL,
+    ADD COLUMN `deviceOwnership` JSON NULL,
+    ADD COLUMN `emailVerified` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `employmentStatus` VARCHAR(191) NULL,
+    ADD COLUMN `ethnicity` VARCHAR(191) NULL,
+    ADD COLUMN `fraudFlagged` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `internetAccess` VARCHAR(191) NULL,
+    ADD COLUMN `languagesSpoken` JSON NULL,
+    ADD COLUMN `preferredDeviceForSurveys` VARCHAR(191) NULL,
+    ADD COLUMN `preferredSurveyLength` VARCHAR(191) NULL,
+    ADD COLUMN `receiveNotifications` BOOLEAN NOT NULL DEFAULT true,
+    ADD COLUMN `religion` VARCHAR(191) NULL,
+    ADD COLUMN `socialMediaPlatforms` JSON NULL,
+    ADD COLUMN `topicsOfInterest` JSON NULL;

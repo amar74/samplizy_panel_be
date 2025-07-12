@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                       Int       @id @default(autoincrement())
+  firstName                String
+  lastName                 String
+  email                    String    @unique
+  password                 String
+  contactNumber            String?
+  countryCode              String?   @default("+1")
+  location                 String?
+  language                 String?   @default("en")
+  occupation               String?
+  age                      Int?
+  gender                   String?   @default("prefer_not_to_say") // male, female, other, prefer_not_to_say
+  education                String?   // high_school, bachelor, master, phd, other
+  income                   String?   // low, medium, high, prefer_not_to_say
+  maritalStatus            String?   // single, married, divorced, widowed, prefer_not_to_say
+  householdSize            Int?
+  children                 Int?
+  
+  // Extended Demographics Fields
+  address                  String?   // City, State, Zip
+  employmentStatus         String?   // employed, student, retired, unemployed, self_employed
+  annualHouseholdIncome    String?   // income brackets
+  languagesSpoken          Json?     // Array of languages
+  religion                 String?   // religion or ethnicity
+  ethnicity                String?   // specific ethnicity
+  
+  // Tech & Device Info
+  deviceOwnership          Json?     // Array of devices: smartphone, laptop, tablet, desktop, smart_tv
+  internetAccess           String?   // broadband, mobile, none
+  socialMediaPlatforms     Json?     // Array of platforms: facebook, instagram, linkedin, twitter, tiktok, youtube
+  
+  // Survey Preferences
+  preferredSurveyLength    String?   // short, medium, long
+  topicsOfInterest         Json?     // Array of topics: health, finance, travel, technology, food, fashion, etc.
+  preferredDeviceForSurveys String?  // mobile, desktop, no_preference
+  receiveNotifications     Boolean   @default(true)
+  
+  // Status & Verification Flags
+  emailVerified            Boolean   @default(false) // After OTP
+  accountActive            Boolean   @default(true)  // Default true after email verify
+  fraudFlagged             Boolean   @default(false) // Internal review logic
+  profileCompletion        Int       @default(0)     // For dashboard meter
+  
+  referralCode             String?   // Optional referral code field
+  role                     String    @default("panelist") // panelist, researcher, admin
+  isEmailVerified          Boolean   @default(false)
+  isActive                 Boolean   @default(true)
+  emailVerificationToken   String?
+  emailVerificationExpires DateTime?
+  resetPasswordToken       String?
+  resetPasswordExpires     DateTime?
+  passwordChangeToken      String?
+  passwordChangeExpires    DateTime?
+  lastLoginAt              DateTime?
+  points                   Int       @default(0) // Current points balance
+  totalPoints              Int       @default(0) // Total points earned
+  surveys                  Survey[]  @relation("SurveyCreator")
+  surveyResponses          SurveyResponse[]
+  activities               UserActivity[]
+  rewardRedemptions        RewardRedemption[]
+  supportTickets           SupportTicket[]
+  userSessions             UserSession[]
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+}
+
+model Survey {
+  id                Int      @id @default(autoincrement())
+  title             String
+  description       String
+  category          String
+  status            String   @default("draft") // 'draft', 'active', 'paused', 'completed'
+  estimatedDuration Int      // in minutes
+  reward            Int      // points
+  questions         Json?    // Store questions as JSON
+  targetAudience    Json?    // Store target audience criteria as JSON
+  tags              Json?    // Store tags as JSON array
+  createdBy         User     @relation("SurveyCreator", fields: [createdById], references: [id])
+  createdById       Int
+  responses         SurveyResponse[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([createdById], map: "Survey_createdById_fkey")
+}
+
+model SurveyResponse {
+  id                Int      @id @default(autoincrement())
+  survey            Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  surveyId          Int
+  respondent        User     @relation(fields: [respondentId], references: [id], onDelete: Cascade)
+  respondentId      Int
+  responses         Json     // Store responses as JSON
+  status            String   @default("in_progress") // 'in_progress', 'completed', 'disqualified', 'quota_full'
+  startedAt         DateTime @default(now())
+  completedAt       DateTime?
+  timeSpent         Int?     // Time spent in seconds
+  pointsEarned      Int      @default(0)
+  isQualified       Boolean  @default(true)
+  disqualificationReason String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([surveyId, respondentId])
+  @@index([surveyId], map: "SurveyResponse_surveyId_fkey")
+  @@index([respondentId], map: "SurveyResponse_respondentId_fkey")
+}
+
+model UserActivity {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  type        String   // 'login', 'profile_update', 'survey_started', 'survey_completed', 'reward_earned'
+  description String
+  metadata    Json?    // Additional data about the activity
+  createdAt   DateTime @default(now())
+
+  @@index([userId], map: "UserActivity_userId_fkey")
+  @@index([type], map: "UserActivity_type_fkey")
+}
+
+model Reward {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  points      Int      // Points required to redeem
+  type        String   // 'gift_card', 'cash', 'product', 'other'
+  value       Float?   // Monetary value if applicable
+  isActive    Boolean  @default(true)
+  redemptions RewardRedemption[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RewardRedemption {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  reward      Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  rewardId    Int
+  pointsSpent Int
+  status      String   @default("pending") // 'pending', 'approved', 'rejected', 'completed'
+  notes       String?  // Admin notes
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId], map: "RewardRedemption_userId_fkey")
+  @@index([rewardId], map: "RewardRedemption_rewardId_fkey")
+  @@index([status], map: "RewardRedemption_status_fkey")
+}
+
+model SupportTicket {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  category    String   // e.g., General, Technical, Account, Payment
+  priority    String   // e.g., Low, Medium, High, Urgent
+  subject     String
+  message     String
+  status      String   @default("open") // 'open', 'closed'
+  adminReply  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model UserSession {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  sessionToken String  @db.Text // JWT or session token, allow long values
+  userAgent   String?
+  ipAddress   String?
+  issuedAt    DateTime @default(now())
+  expiresAt   DateTime
+  lastUsedAt  DateTime @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isActive])
+}
