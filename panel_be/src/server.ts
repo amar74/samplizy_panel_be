@@ -12,6 +12,7 @@ import panelistSupportRoutes from './routes/panelistSupport';
 import analyticsRoutes from './routes/analytics';
 import surveyResponsesRoutes from './routes/surveyResponses';
 import settingsRoutes from './routes/settings';
+import vendorRoutes from './routes/vendor';
 
 // Load environment variables
 dotenv.config();
@@ -21,19 +22,17 @@ const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(helmet());
+// Add robust CORS configuration
 app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:3001',
-    'http://localhost:3002',
-    'http://localhost:3003',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175',
-    'http://localhost:5176',
-    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001'
   ],
-  credentials: true
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
 }));
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
@@ -58,6 +57,7 @@ app.use('/api/survey-responses', surveyResponsesRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/vendor', vendorRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

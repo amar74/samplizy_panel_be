@@ -170,6 +170,9 @@ router.post('/', authenticateToken, requireResearcher, [
   body('estimatedDuration')
     .isInt({ min: 1 })
     .withMessage('Estimated duration must be at least 1 minute'),
+  body('reward')
+    .isInt({ min: 0 })
+    .withMessage('Reward is required and must be a non-negative integer'),
   body('status')
     .optional()
     .isIn(['draft', 'active', 'paused', 'completed'])
@@ -187,6 +190,7 @@ router.post('/', authenticateToken, requireResearcher, [
 
     const surveyData = {
       ...req.body,
+      questions: JSON.stringify(req.body.questions), // Convert array to JSON string
       createdById: (req.user as any).userId,
       status: req.body.status || 'draft'
     };

@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -9,152 +8,182 @@ datasource db {
 }
 
 model User {
-  id                       Int       @id @default(autoincrement())
-  firstName                String
-  lastName                 String
-  email                    String    @unique
-  password                 String
-  contactNumber            String?
-  countryCode              String?   @default("+1")
-  location                 String?
-  language                 String?   @default("en")
-  occupation               String?
-  age                      Int?
-  gender                   String?   @default("prefer_not_to_say") // male, female, other, prefer_not_to_say
-  education                String?   // high_school, bachelor, master, phd, other
-  income                   String?   // low, medium, high, prefer_not_to_say
-  maritalStatus            String?   // single, married, divorced, widowed, prefer_not_to_say
-  householdSize            Int?
-  children                 Int?
-  
-  // Extended Demographics Fields
-  address                  String?   // City, State, Zip
-  employmentStatus         String?   // employed, student, retired, unemployed, self_employed
-  annualHouseholdIncome    String?   // income brackets
-  languagesSpoken          Json?     // Array of languages
-  religion                 String?   // religion or ethnicity
-  ethnicity                String?   // specific ethnicity
-  
-  // Tech & Device Info
-  deviceOwnership          Json?     // Array of devices: smartphone, laptop, tablet, desktop, smart_tv
-  internetAccess           String?   // broadband, mobile, none
-  socialMediaPlatforms     Json?     // Array of platforms: facebook, instagram, linkedin, twitter, tiktok, youtube
-  
-  // Survey Preferences
-  preferredSurveyLength    String?   // short, medium, long
-  topicsOfInterest         Json?     // Array of topics: health, finance, travel, technology, food, fashion, etc.
-  preferredDeviceForSurveys String?  // mobile, desktop, no_preference
-  receiveNotifications     Boolean   @default(true)
-  
-  // Status & Verification Flags
-  emailVerified            Boolean   @default(false) // After OTP
-  accountActive            Boolean   @default(true)  // Default true after email verify
-  fraudFlagged             Boolean   @default(false) // Internal review logic
-  profileCompletion        Int       @default(0)     // For dashboard meter
-  
-  referralCode             String?   // Optional referral code field
-  role                     String    @default("panelist") // panelist, researcher, admin
-  isEmailVerified          Boolean   @default(false)
-  isActive                 Boolean   @default(true)
-  emailVerificationToken   String?
-  emailVerificationExpires DateTime?
-  resetPasswordToken       String?
-  resetPasswordExpires     DateTime?
-  passwordChangeToken      String?
-  passwordChangeExpires    DateTime?
-  lastLoginAt              DateTime?
-  points                   Int       @default(0) // Current points balance
-  totalPoints              Int       @default(0) // Total points earned
-  surveys                  Survey[]  @relation("SurveyCreator")
-  surveyResponses          SurveyResponse[]
-  activities               UserActivity[]
-  rewardRedemptions        RewardRedemption[]
-  supportTickets           SupportTicket[]
-  userSessions             UserSession[]
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  id                        Int                @id @default(autoincrement())
+  email                     String             @unique
+  password                  String
+  role                      String             @default("panelist")
+  isActive                  Boolean            @default(true)
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
+  age                       Int?
+  contactNumber             String?
+  countryCode               String?            @default("+1")
+  emailVerificationExpires  DateTime?
+  emailVerificationToken    String?
+  firstName                 String
+  isEmailVerified           Boolean            @default(false)
+  language                  String?            @default("en")
+  lastName                  String
+  location                  String?
+  occupation                String?
+  resetPasswordExpires      DateTime?
+  resetPasswordToken        String?
+  children                  Int?
+  education                 String?
+  gender                    String?            @default("prefer_not_to_say")
+  householdSize             Int?
+  income                    String?
+  lastLoginAt               DateTime?
+  maritalStatus             String?
+  profileCompletion         Int                @default(0)
+  totalPoints               Int                @default(0)
+  referralCode              String?
+  accountActive             Boolean            @default(true)
+  address                   String?
+  annualHouseholdIncome     String?
+  deviceOwnership           String?            @db.LongText
+  emailVerified             Boolean            @default(false)
+  employmentStatus          String?
+  ethnicity                 String?
+  fraudFlagged              Boolean            @default(false)
+  internetAccess            String?
+  languagesSpoken           String?            @db.LongText
+  preferredDeviceForSurveys String?
+  preferredSurveyLength     String?
+  receiveNotifications      Boolean            @default(true)
+  religion                  String?
+  socialMediaPlatforms      String?            @db.LongText
+  topicsOfInterest          String?            @db.LongText
+  points                    Int                @default(0)
+  passwordChangeExpires     DateTime?
+  passwordChangeToken       String?
+  rewardRedemptions         RewardRedemption[]
+  supportTickets            SupportTicket[]
+  surveys                   Survey[]           @relation("SurveyCreator")
+  surveyResponses           SurveyResponse[]
+  activities                UserActivity[]
+  userSessions              UserSession[]
+  surveyAssignments         SurveyAssignment[]
 }
 
 model Survey {
-  id                Int      @id @default(autoincrement())
+  id                Int              @id @default(autoincrement())
   title             String
   description       String
+  clientName        String?
+  projectCode       String?
+  surveyType        String? // Enum: CSAT, NPS, etc.
+  language          String? // e.g., EN, HI
+  department        String?
+  confidentiality   String? // Enum: Open, Internal, Confidential, NDA-required
+  rewardType        String? // Enum: Points, Cash, Vouchers, No Reward
+  reward            Int
+  status            String           @default("draft")
   category          String
-  status            String   @default("draft") // 'draft', 'active', 'paused', 'completed'
-  estimatedDuration Int      // in minutes
-  reward            Int      // points
-  questions         Json?    // Store questions as JSON
-  targetAudience    Json?    // Store target audience criteria as JSON
-  tags              Json?    // Store tags as JSON array
-  createdBy         User     @relation("SurveyCreator", fields: [createdById], references: [id])
   createdById       Int
+  estimatedDuration Int
+  questions         String?          @db.LongText
+  tags              Json?
+  targetAudience    Json? // Targeting logic (country, age, gender, etc.)
+  qualityControls   Json? // Quality & validation controls
+  surveyLinks       Json? // URLs and flow
+  limits            Json? // Limits & exclusion rules
+  audit             Json? // Audit & monitoring
+  advanced          Json? // Optional advanced fields
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  createdBy         User             @relation("SurveyCreator", fields: [createdById], references: [id])
   responses         SurveyResponse[]
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  assignments       SurveyAssignment[]
 
   @@index([createdById], map: "Survey_createdById_fkey")
 }
 
 model SurveyResponse {
-  id                Int      @id @default(autoincrement())
-  survey            Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  surveyId          Int
-  respondent        User     @relation(fields: [respondentId], references: [id], onDelete: Cascade)
-  respondentId      Int
-  responses         Json     // Store responses as JSON
-  status            String   @default("in_progress") // 'in_progress', 'completed', 'disqualified', 'quota_full'
-  startedAt         DateTime @default(now())
-  completedAt       DateTime?
-  timeSpent         Int?     // Time spent in seconds
-  pointsEarned      Int      @default(0)
-  isQualified       Boolean  @default(true)
+  id                     Int       @id @default(autoincrement())
+  surveyId               Int
+  respondentId           Int
+  responses              String    @db.LongText
+  status                 String    @default("in_progress")
+  startedAt              DateTime  @default(now())
+  completedAt            DateTime?
+  timeSpent              Int?
+  pointsEarned           Int       @default(0)
+  isQualified            Boolean   @default(true)
   disqualificationReason String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  respondent             User      @relation(fields: [respondentId], references: [id], onDelete: Cascade)
+  survey                 Survey    @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
   @@unique([surveyId, respondentId])
   @@index([surveyId], map: "SurveyResponse_surveyId_fkey")
   @@index([respondentId], map: "SurveyResponse_respondentId_fkey")
 }
 
+model SurveyAssignment {
+  id                Int      @id @default(autoincrement())
+  surveyId          Int
+  userId            Int
+  assignedDate      DateTime @default(now())
+  surveyStatus      String   // not_started, in_progress, completed, terminated, quota_full
+  responseDuration  Int?
+  qualityFlag       String?  // pass, fail, review
+  completionDate    DateTime?
+  responseId        Int?
+  incentiveGranted  Boolean? @default(false)
+  incentiveValue    Int?
+  isRecontactEligible Boolean? @default(false)
+  createdBy         Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  remarksInternal   String?
+  clientNotes       String?
+  survey            Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([surveyId])
+  @@index([userId])
+}
+
 model UserActivity {
   id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
-  type        String   // 'login', 'profile_update', 'survey_started', 'survey_completed', 'reward_earned'
+  type        String
   description String
-  metadata    Json?    // Additional data about the activity
+  metadata    String?  @db.LongText
   createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "UserActivity_userId_fkey")
   @@index([type], map: "UserActivity_type_fkey")
 }
 
 model Reward {
-  id          Int      @id @default(autoincrement())
+  id          Int                @id @default(autoincrement())
   name        String
   description String?
-  points      Int      // Points required to redeem
-  type        String   // 'gift_card', 'cash', 'product', 'other'
-  value       Float?   // Monetary value if applicable
-  isActive    Boolean  @default(true)
+  points      Int
+  type        String
+  value       Float?
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
   redemptions RewardRedemption[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model RewardRedemption {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          Int       @id @default(autoincrement())
   userId      Int
-  reward      Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
   rewardId    Int
   pointsSpent Int
-  status      String   @default("pending") // 'pending', 'approved', 'rejected', 'completed'
-  notes       String?  // Admin notes
+  status      String    @default("pending")
+  notes       String?
   processedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  reward      Reward    @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "RewardRedemption_userId_fkey")
   @@index([rewardId], map: "RewardRedemption_rewardId_fkey")
@@ -162,36 +191,120 @@ model RewardRedemption {
 }
 
 model SupportTicket {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  category    String   // e.g., General, Technical, Account, Payment
-  priority    String   // e.g., Low, Medium, High, Urgent
-  subject     String
-  message     String
-  status      String   @default("open") // 'open', 'closed'
-  adminReply  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  subject    String
+  message    String
+  status     String   @default("open")
+  adminReply String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  category   String
+  priority   String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
 }
 
 model UserSession {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  sessionToken String  @db.Text // JWT or session token, allow long values
-  userAgent   String?
-  ipAddress   String?
-  issuedAt    DateTime @default(now())
-  expiresAt   DateTime
-  lastUsedAt  DateTime @default(now())
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  sessionToken String   @db.Text
+  userAgent    String?
+  ipAddress    String?
+  issuedAt     DateTime @default(now())
+  expiresAt    DateTime
+  lastUsedAt   DateTime @default(now())
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isActive])
+}
+
+model Vendor {
+  id             Int       @id @default(autoincrement())
+  name           String
+  email          String    @unique
+  password       String
+  company        String?
+  profile        Json?
+  status         String    // 'pending_verification' | 'active' | 'suspended' | 'flagged'
+  redirectStatus String?   // 'terminate' | 'quota_full' | 'complete' | 'security_terminate' | 'error_404'
+  externalLink   String?
+  emailVerificationToken String?
+  emailVerificationExpires DateTime?
+  
+  // Business & Tax Information
+  yearsInBusiness Int?
+  numberOfEmployees Int?
+  annualRevenue    String?
+  
+  // Required Documents
+  panelBook        String?  // File path or URL
+  panelRegistrationDetails String?  // File path or URL
+  businessInformation String?  // File path or URL
+  otherDocuments   String?  // JSON array of file paths or URLs
+  
+  // Services and Description
+  servicesOffered  String?  @db.LongText
+  previousProjects String?  @db.LongText
+  whyPartnerWithUs String?  @db.LongText
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  postedProjects   Project[] @relation("PostedProjects")
+  assignedProjects Project[] @relation("AssignedProjects")
+  bids            Bid[]
+  sentMessages    Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+model Project {
+  id             Int       @id @default(autoincrement())
+  title          String
+  description    String   @db.LongText
+  postedById     Int
+  assignedToId   Int?
+  status         String    // 'open' | 'assigned' | 'closed'
+  redirectStatus String?   // 'terminate' | 'quota_full' | 'complete' | 'security_terminate'
+  externalLink   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  postedBy   Vendor   @relation("PostedProjects", fields: [postedById], references: [id])
+  assignedTo Vendor?  @relation("AssignedProjects", fields: [assignedToId], references: [id])
+  bids       Bid[]
+  messages   Message[]
+}
+
+model Bid {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  vendorId  Int
+  bidAmount Float
+  message   String?
+  status    String   // 'pending' | 'accepted' | 'rejected'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
+  vendor  Vendor  @relation(fields: [vendorId], references: [id])
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  projectId  Int
+  message    String
+  timestamp  DateTime @default(now())
+
+  sender   Vendor  @relation("SentMessages", fields: [senderId], references: [id])
+  receiver Vendor  @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  project  Project @relation(fields: [projectId], references: [id])
 }

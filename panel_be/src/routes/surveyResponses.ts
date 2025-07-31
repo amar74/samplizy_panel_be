@@ -21,7 +21,7 @@ router.post('/start', authenticateToken, requirePanelist, async (req, res) => {
         surveyId,
         respondentId,
         status: 'in_progress',
-        responses: {},
+        responses: JSON.stringify({}),
         startedAt: new Date(),
       }
     });
@@ -40,7 +40,7 @@ router.put('/:id/save', authenticateToken, requirePanelist, async (req, res) => 
     const respondentId = (req.user as any).userId;
     const surveyResponse = await prisma.surveyResponse.updateMany({
       where: { id: Number(id), respondentId, status: 'in_progress' },
-      data: { responses, updatedAt: new Date() }
+      data: { responses: JSON.stringify(responses), updatedAt: new Date() }
     });
     if (surveyResponse.count === 0) {
       return res.status(404).json({ success: false, message: 'Survey response not found or not in progress' });
@@ -134,7 +134,7 @@ router.put('/:id/complete', authenticateToken, requirePanelist, async (req, res)
     await prisma.surveyResponse.update({
       where: { id: Number(id) },
       data: {
-        responses,
+        responses: JSON.stringify(responses),
         status: isQualified === false ? 'disqualified' : 'completed',
         completedAt: new Date(),
         timeSpent,
